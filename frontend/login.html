@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RestaurApp — Acceso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0a0a0a;
+      --panel:    #111111;
+      --card:     #181818;
+      --border:   #252525;
+      --accent:   #e8c547;
+      --accent2:  #e87d2e;
+      --text:     #f0ece0;
+      --muted:    #6b6560;
+      --danger:   #e85d5d;
+      --success:  #5de8a0;
+      --radius:   14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+    }
+
+    /* ── LADO IZQUIERDO: decorativo ── */
+    .hero {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Patrón de cuadrícula sutil */
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: .4;
+    }
+
+    /* Orbe de color */
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,197,71,.12) 0%, transparent 70%);
+      bottom: -100px; left: -100px;
+      pointer-events: none;
+    }
+
+    .hero-logo {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .hero-logo-icon {
+      width: 44px; height: 44px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 22px;
+    }
+    .hero-logo-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -.02em;
+    }
+    .hero-logo-text span { color: var(--accent); }
+
+    .hero-content {
+      position: relative; z-index: 1;
+    }
+    .hero-tagline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.1;
+      letter-spacing: -.02em;
+      margin-bottom: 1.2rem;
+    }
+    .hero-tagline em { color: var(--accent); font-style: italic; }
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+      max-width: 380px;
+    }
+
+    .hero-roles {
+      position: relative; z-index: 1;
+      display: flex; gap: .6rem; flex-wrap: wrap;
+    }
+    .role-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: .4rem .9rem;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    .role-pill span { color: var(--text); font-weight: 500; }
+
+    /* ── LADO DERECHO: formulario ── */
+    .login-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 3rem;
+      gap: 0;
+    }
+
+    .login-header { margin-bottom: 2.5rem; }
+    .login-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      line-height: 1.1;
+      margin-bottom: .5rem;
+    }
+    .login-sub { color: var(--muted); font-size: .9rem; }
+
+    /* Demo badges */
+    .demo-accounts {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .demo-title {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .7rem;
+    }
+    .demo-list { display: flex; flex-direction: column; gap: .5rem; }
+    .demo-item {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .5rem; cursor: pointer;
+      padding: .4rem .6rem;
+      border-radius: 8px;
+      transition: background .15s;
+    }
+    .demo-item:hover { background: rgba(255,255,255,.04); }
+    .demo-email { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--text); }
+    .demo-badge {
+      font-size: .68rem; font-weight: 600;
+      padding: .2rem .6rem;
+      border-radius: 99px;
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .badge-admin  { background: rgba(232,197,71,.15); color: var(--accent); }
+    .badge-mesero { background: rgba(232,125,46,.15); color: #e87d2e; }
+    .badge-cocina { background: rgba(93,232,160,.15); color: var(--success); }
+
+    /* Formulario */
+    .form { display: flex; flex-direction: column; gap: 1.1rem; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .input-wrap { position: relative; }
+    .form-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      padding: .8rem 1rem .8rem 2.8rem;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,197,71,.1);
+    }
+    .form-input.error { border-color: var(--danger); }
+    .input-icon {
+      position: absolute; left: 1rem; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted); font-size: 1rem;
+      pointer-events: none;
+    }
+    .input-toggle {
+      position: absolute; right: 1rem; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted); cursor: pointer;
+      font-size: .9rem; user-select: none;
+      padding: 4px;
+    }
+    .form-error {
+      font-size: .75rem; color: var(--danger);
+      display: none;
+    }
+    .form-error.show { display: block; }
+
+    /* Botón submit */
+    .btn-login {
+      width: 100%;
+      padding: .9rem;
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .02em;
+      transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: .5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-login:hover:not(:disabled) {
+      background: #f0d050;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(232,197,71,.3);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(0,0,0,.2);
+      border-top-color: #0a0a0a;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Alert de error global */
+    .alert {
+      display: none;
+      background: rgba(232,93,93,.1);
+      border: 1px solid rgba(232,93,93,.3);
+      border-radius: var(--radius);
+      padding: .8rem 1rem;
+      font-size: .875rem;
+      color: var(--danger);
+      align-items: center; gap: .5rem;
+    }
+    .alert.show { display: flex; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 800px) {
+      body { grid-template-columns: 1fr; }
+      .hero { display: none; }
+      .login-panel { padding: 2rem 1.5rem; justify-content: flex-start; padding-top: 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LADO IZQUIERDO -->
+<div class="hero">
+  <div class="hero-logo">
+    <div class="hero-logo-icon">🍽️</div>
+    <div class="hero-logo-text">Rest<span>aurApp</span></div>
+  </div>
+
+  <div class="hero-content">
+    <h1 class="hero-tagline">
+      Gestiona tus<br>pedidos de forma<br><em>inteligente</em>
+    </h1>
+    <p class="hero-sub">
+      Sistema centralizado para cocina, meseros y administración.
+      Control en tiempo real de cada pedido.
+    </p>
+  </div>
+
+  <div class="hero-roles">
+    <div class="role-pill">👑 <span>Admin</span> — control total</div>
+    <div class="role-pill">🧑‍🍽️ <span>Mesero</span> — registra pedidos</div>
+    <div class="role-pill">👨‍🍳 <span>Cocina</span> — actualiza estados</div>
+  </div>
+</div>
+
+<!-- LADO DERECHO: LOGIN -->
+<div class="login-panel">
+  <div class="login-header">
+    <h2 class="login-title">Bienvenido<br>de vuelta</h2>
+    <p class="login-sub">Ingresa con tus credenciales para continuar</p>
+  </div>
+
+  <!-- Cuentas de demo -->
+  <div class="demo-accounts">
+    <div class="demo-title">Cuentas de prueba — clic para autocompletar</div>
+    <div class="demo-list">
+      <div class="demo-item" onclick="fillDemo('admin@restaurante.com','admin123')">
+        <span class="demo-email">admin@restaurante.com</span>
+        <span class="demo-badge badge-admin">Admin</span>
+      </div>
+      <div class="demo-item" onclick="fillDemo('mesero@restaurante.com','mesero123')">
+        <span class="demo-email">mesero@restaurante.com</span>
+        <span class="demo-badge badge-mesero">Mesero</span>
+      </div>
+      <div class="demo-item" onclick="fillDemo('cocina@restaurante.com','cocina123')">
+        <span class="demo-email">cocina@restaurante.com</span>
+        <span class="demo-badge badge-cocina">Cocina</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerta global -->
+  <div class="alert" id="alert-global">
+    <span>⚠</span>
+    <span id="alert-msg">Error de autenticación</span>
+  </div>
+
+  <!-- Formulario -->
+  <form class="form" onsubmit="handleLogin(event)" novalidate>
+    <div class="form-group">
+      <label class="form-label" for="email">Correo electrónico</label>
+      <div class="input-wrap">
+        <span class="input-icon">✉</span>
+        <input class="form-input" id="email" type="email"
+          placeholder="usuario@restaurante.com" autocomplete="email" />
+      </div>
+      <span class="form-error" id="err-email">Ingresa un email válido.</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Contraseña</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input class="form-input" id="password" type="password"
+          placeholder="••••••••" autocomplete="current-password" />
+        <span class="input-toggle" onclick="togglePass()" id="pass-toggle" title="Mostrar/ocultar">👁</span>
+      </div>
+      <span class="form-error" id="err-pass">Ingresa tu contraseña.</span>
+    </div>
+
+    <button class="btn-login" type="submit" id="btn-login">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-text">Iniciar sesión</span>
+    </button>
+  </form>
+</div>
+
+<script>
+  const API = 'http://localhost:3000';
+
+  // ── Autocompletar demo ────────────────────────────────
+  function fillDemo(email, pass) {
+    document.getElementById('email').value    = email;
+    document.getElementById('password').value = pass;
+    hideAlert();
+  }
+
+  // ── Mostrar / ocultar contraseña ──────────────────────
+  function togglePass() {
+    const inp = document.getElementById('password');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  // ── Validación ────────────────────────────────────────
+  function validar() {
+    let ok = true;
+    const email = document.getElementById('email').value.trim();
+    const pass  = document.getElementById('password').value;
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    document.getElementById('email').classList.toggle('error', !emailOk);
+    document.getElementById('err-email').classList.toggle('show', !emailOk);
+    if (!emailOk) ok = false;
+
+    const passOk = pass.length >= 4;
+    document.getElementById('password').classList.toggle('error', !passOk);
+    document.getElementById('err-pass').classList.toggle('show', !passOk);
+    if (!passOk) ok = false;
+
+    return ok;
+  }
+
+  // ── Login ─────────────────────────────────────────────
+  async function handleLogin(e) {
+    e.preventDefault();
+    hideAlert();
+    if (!validar()) return;
+
+    setLoading(true);
+
+    const email    = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+
+    try {
+      const res  = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        showAlert(data.error || 'Credenciales incorrectas');
+        setLoading(false);
+        return;
+      }
+
+      // Guardar tokens y usuario
+      localStorage.setItem('accessToken',  data.data.accessToken);
+      localStorage.setItem('refreshToken', data.data.refreshToken);
+      localStorage.setItem('usuario',      JSON.stringify(data.data.usuario));
+
+      // Redirigir
+      window.location.href = 'index.html';
+
+    } catch (err) {
+      // Modo demo sin backend
+      console.warn('Sin conexión al backend — modo demo');
+      const demos = {
+        'admin@restaurante.com':  { id:1, nombre:'Administrador', rol:'admin' },
+        'mesero@restaurante.com': { id:2, nombre:'Carlos Mesero', rol:'mesero' },
+        'cocina@restaurante.com': { id:3, nombre:'Ana Cocina',    rol:'cocina' },
+      };
+      const usuario = demos[email];
+      if (usuario && password.length >= 4) {
+        localStorage.setItem('accessToken',  'demo-token');
+        localStorage.setItem('refreshToken', 'demo-refresh');
+        localStorage.setItem('usuario',      JSON.stringify(usuario));
+        window.location.href = 'index.html';
+      } else {
+        showAlert('No se pudo conectar al servidor. Usa las credenciales de demo.');
+        setLoading(false);
+      }
+    }
+  }
+
+  // ── UI helpers ────────────────────────────────────────
+  function setLoading(loading) {
+    const btn     = document.getElementById('btn-login');
+    const spinner = document.getElementById('spinner');
+    const txt     = document.getElementById('btn-text');
+    btn.disabled          = loading;
+    spinner.style.display = loading ? 'block' : 'none';
+    txt.textContent       = loading ? 'Verificando…' : 'Iniciar sesión';
+  }
+
+  function showAlert(msg) {
+    document.getElementById('alert-msg').textContent = msg;
+    document.getElementById('alert-global').classList.add('show');
+  }
+
+  function hideAlert() {
+    document.getElementById('alert-global').classList.remove('show');
+  }
+
+  // ── Si ya hay sesión, redirigir ───────────────────────
+  if (localStorage.getItem('accessToken')) {
+    window.location.href = 'index.html';
+  }
+</script>
+</body>
+</html>
