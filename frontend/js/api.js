@@ -1,3 +1,5 @@
+import { API_BASE } from './config.js';
+
 async function apiFetch(endpoint, options = {}) {
 
     const token = localStorage.getItem('accessToken');
@@ -20,7 +22,7 @@ async function apiFetch(endpoint, options = {}) {
     };
 
     const response = await fetch(
-        `${API}${endpoint}`,
+        `${API_BASE}${endpoint}`,
         config
     );
 
@@ -54,7 +56,8 @@ async function cargarPedidos() {
                 `HTTP ${res.status}`
             );
 
-        pedidos = await res.json();
+        const response = await res.json();
+        pedidos = response.data || [];
 
         renderTabla();
 
@@ -82,12 +85,17 @@ async function confirmarDelete() {
 
     try {
 
-        await apiFetch(
+        const res = await apiFetch(
             `/pedidos/${deleteTarget}`,
             {
                 method:'DELETE'
             }
         );
+
+        if (!res || !res.ok) {
+            const error = await res?.json();
+            throw new Error(error?.error || 'Error al eliminar');
+        }
 
         pedidos = pedidos.filter(
             p=>p.id!==deleteTarget
@@ -97,9 +105,13 @@ async function confirmarDelete() {
 
         updateStats();
 
+        showToast('Pedido eliminado','success');
+
     } catch(e){
 
         console.error(e);
+
+        showToast(e.message,'error');
 
     }
 
@@ -114,7 +126,7 @@ async function confirmarEstado(){
 
     try{
 
-        await apiFetch(
+        const res = await apiFetch(
             `/pedidos/${estadoTarget}`,
             {
                 method:'PUT',
@@ -127,6 +139,11 @@ async function confirmarEstado(){
             }
         );
 
+        if (!res || !res.ok) {
+            const error = await res?.json();
+            throw new Error(error?.error || 'Error al actualizar estado');
+        }
+
         const p=pedidos.find(
             x=>x.id===estadoTarget
         );
@@ -137,9 +154,13 @@ async function confirmarEstado(){
 
         updateStats();
 
+        showToast('Estado actualizado','success');
+
     }catch(e){
 
         console.error(e);
+
+        showToast(e.message,'error');
 
     }
 

@@ -20,6 +20,10 @@ pool.getConnection()
     console.log('✅ Conectado a MySQL →', process.env.DB_NAME || 'restaurante_db');
     conn.release();
   })
-  .catch(e => console.error('❌ Error de conexión MySQL:', e.message));
+  .catch(e => {
+    console.error('❌ Error de conexión MySQL:', e.message);
+    console.error('⚠️  La aplicación requiere una conexión válida a MySQL para funcionar.');
+    process.exit(1); // Terminar si la conexión falla
+  });
 
 module.exports = pool;

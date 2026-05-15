@@ -9,7 +9,14 @@ const pedidosRouter = require('./routes/pedidos');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Configurar CORS restrictivamente
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://localhost:5173'], // Desarrollo
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Servir frontend

@@ -51,11 +51,14 @@ router.post('/login', async (req, res) => {
     const accessToken  = jwt.sign(payload, SECRET, { expiresIn: ACCESS_EXPIRES });
     const refreshToken = jwt.sign({ id: usuario.id }, SECRET, { expiresIn: REFRESH_EXPIRES });
 
-    // Guardar refresh token en BD
+    // Hashear refresh token antes de guardar en BD
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    
+    // Guardar refresh token hasheado en BD
     const expira = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await db.query(
       'INSERT INTO refresh_tokens (usuario_id, token, expira_en) VALUES (?, ?, ?)',
-      [usuario.id, refreshToken, expira]
+      [usuario.id, refreshTokenHash, expira]
     );
 
     // Actualizar último acceso
@@ -85,11 +88,24 @@ router.post('/refresh', async (req, res) => {
     const payload = jwt.verify(refreshToken, SECRET);
 
     const [rows] = await db.query(
-      'SELECT * FROM refresh_tokens WHERE token = ? AND revocado = 0 AND expira_en > NOW()',
-      [refreshToken]
+      'SELECT token FROM refresh_tokens WHERE usuario_id = ? AND revocado = 0 AND expira_en > NOW()',
+      [payload.id]
     );
+    
     if (!rows.length)
       return res.status(401).json({ ok: false, error: 'Refresh token inválido o expirado' });
+
+    // Verificar que el token hasheado coincida
+    let tokenValido = false;
+    for (const row of rows) {
+      if (await bcrypt.compare(refreshToken, row.token)) {
+        tokenValido = true;
+        break;
+      }
+    }
+    
+    if (!tokenValido)
+      return res.status(401).json({ ok: false, error: 'Refresh token inválido' });
 
     // Buscar usuario actualizado
     const [usuarios] = await db.query(
@@ -115,10 +131,23 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', verificarToken, async (req, res) => {
   const { refreshToken } = req.body;
   if (refreshToken) {
-    await db.query(
-      'UPDATE refresh_tokens SET revocado = 1 WHERE token = ?',
-      [refreshToken]
-    ).catch(() => {});
+    try {
+      const [rows] = await db.query(
+        'SELECT token FROM refresh_tokens WHERE usuario_id = ? AND revocado = 0',
+        [req.usuario.id]
+      );
+      for (const row of rows) {
+        if (await bcrypt.compare(refreshToken, row.token)) {
+          await db.query(
+            'UPDATE refresh_tokens SET revocado = 1 WHERE usuario_id = ? AND revocado = 0',
+            [req.usuario.id]
+          );
+          break;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
   return res.json({ ok: true, data: { message: 'Sesión cerrada' } });
 });

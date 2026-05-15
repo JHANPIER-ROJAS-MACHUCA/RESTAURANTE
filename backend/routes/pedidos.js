@@ -69,6 +69,25 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ── GET /pedidos/stats/ventas ─────────────────────────
+// Solo admin ve el resumen completo
+// IMPORTANTE: Esta ruta DEBE estar antes de /:id para evitar route shadowing
+router.get('/stats/ventas', autorizar('admin'), async (req, res) => {
+  try {
+    const [porEstado] = await db.query(`
+      SELECT estado, COUNT(*) AS cantidad, SUM(cantidad * precio_unitario) AS subtotal
+      FROM pedidos GROUP BY estado
+    `);
+    const [totalRow] = await db.query(`
+      SELECT SUM(cantidad * precio_unitario) AS total
+      FROM pedidos WHERE estado = 'entregado'
+    `);
+    ok(res, { por_estado: porEstado, total_ventas: totalRow[0].total || 0 });
+  } catch (e) {
+    err(res, 'Error al obtener ventas');
+  }
+});
+
 // ── GET /pedidos/:id ──────────────────────────────────
 router.get('/:id', async (req, res) => {
   try {
@@ -168,24 +187,6 @@ router.delete('/:id', autorizar('admin'), async (req, res) => {
     ok(res, { message: 'Pedido eliminado correctamente' });
   } catch (e) {
     err(res, 'Error al eliminar el pedido');
-  }
-});
-
-// ── GET /pedidos/stats/ventas ─────────────────────────
-// Solo admin ve el resumen completo
-router.get('/stats/ventas', autorizar('admin'), async (req, res) => {
-  try {
-    const [porEstado] = await db.query(`
-      SELECT estado, COUNT(*) AS cantidad, SUM(cantidad * precio_unitario) AS subtotal
-      FROM pedidos GROUP BY estado
-    `);
-    const [totalRow] = await db.query(`
-      SELECT SUM(cantidad * precio_unitario) AS total
-      FROM pedidos WHERE estado = 'entregado'
-    `);
-    ok(res, { por_estado: porEstado, total_ventas: totalRow[0].total || 0 });
-  } catch (e) {
-    err(res, 'Error al obtener ventas');
   }
 });
 
