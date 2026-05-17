@@ -1,13 +1,12 @@
 // =====================================================
 // routes/pedidos.js — CRUD protegido por JWT y roles
 // =====================================================
-const express                    = require('express');
-const db                         = require('../db');
+const express                       = require('express');
+const db                            = require('../db');
 const { verificarToken, autorizar } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Todos los endpoints requieren token válido
 router.use(verificarToken);
 
 // ── Helpers ───────────────────────────────────────────
@@ -42,7 +41,6 @@ function validarPedido(body, parcial = false) {
 }
 
 // ── GET /pedidos ──────────────────────────────────────
-// Todos los roles pueden listar
 router.get('/', async (req, res) => {
   try {
     const { estado } = req.query;
@@ -70,9 +68,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── GET /pedidos/stats/ventas ─────────────────────────
-// Solo admin ve el resumen completo
-// IMPORTANTE: Esta ruta DEBE estar antes de /:id para evitar route shadowing
-router.get('/stats/ventas', autorizar('admin'), async (req, res) => {
+router.get('/stats/ventas', autorizar('administrador'), async (req, res) => {
   try {
     const [porEstado] = await db.query(`
       SELECT estado, COUNT(*) AS cantidad, SUM(cantidad * precio_unitario) AS subtotal
@@ -106,8 +102,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // ── POST /pedidos ─────────────────────────────────────
-// Solo admin y mesero pueden crear pedidos
-router.post('/', autorizar('admin', 'mesero'), async (req, res) => {
+router.post('/', autorizar('administrador', 'mesero'), async (req, res) => {
   const { cliente, plato, cantidad, precio_unitario, estado = 'pendiente' } = req.body;
   const errores = validarPedido({ cliente, plato, cantidad, precio_unitario, estado });
   if (errores.length) return err(res, errores.join(' | '), 400);
@@ -127,7 +122,6 @@ router.post('/', autorizar('admin', 'mesero'), async (req, res) => {
 });
 
 // ── PUT /pedidos/:id ──────────────────────────────────
-// Admin puede editar todo | Mesero edita sus propios pedidos | Cocina solo cambia estado
 router.put('/:id', async (req, res) => {
   const { rol, id: userId } = req.usuario;
   const pedidoId = req.params.id;
@@ -137,24 +131,23 @@ router.put('/:id', async (req, res) => {
     if (!existing.length) return err(res, 'Pedido no encontrado', 404);
     const pedido = existing[0];
 
-    // Cocina: SOLO puede cambiar estado
+    // Cocina: solo puede cambiar estado a en_preparacion o listo
     if (rol === 'cocina') {
       const { estado } = req.body;
       if (!estado) return err(res, 'Cocina solo puede actualizar el estado', 400);
       const permitidos = ['en_preparacion', 'listo'];
       if (!permitidos.includes(estado))
         return err(res, 'Cocina solo puede cambiar a: en_preparacion, listo', 403);
-
       await db.query('UPDATE pedidos SET estado = ? WHERE id = ?', [estado, pedidoId]);
       const [rows] = await db.query('SELECT * FROM pedidos WHERE id = ?', [pedidoId]);
       return ok(res, rows[0]);
     }
 
-    // Mesero: solo puede editar sus propios pedidos
+    // Mesero: solo edita sus propios pedidos
     if (rol === 'mesero' && pedido.creado_por !== userId)
       return err(res, 'Solo puedes editar tus propios pedidos', 403);
 
-    // Admin o mesero con su pedido: edición completa
+    // Administrador o mesero con su pedido: edición completa
     const { cliente, plato, cantidad, precio_unitario, estado } = req.body;
     const errores = validarPedido({ cliente, plato, cantidad, precio_unitario, estado }, true);
     if (errores.length) return err(res, errores.join(' | '), 400);
@@ -179,8 +172,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // ── DELETE /pedidos/:id ───────────────────────────────
-// Solo admin puede eliminar
-router.delete('/:id', autorizar('admin'), async (req, res) => {
+router.delete('/:id', autorizar('administrador'), async (req, res) => {
   try {
     const [result] = await db.query('DELETE FROM pedidos WHERE id = ?', [req.params.id]);
     if (!result.affectedRows) return err(res, 'Pedido no encontrado', 404);

@@ -1,20 +1,11 @@
-import { API_BASE } from './config.js';
-
-// Importar los demás módulos como side-effects
-// (sus funciones estarán disponibles globalmente)
 import './guard.js';
 import './state.js';
-import './utils.js';
 import './toast.js';
 import './modal.js';
-import './api.js';
-import './pedidos.js';
-import './ui.js';
+import { renderTabla, updateStats, setFiltro } from './ui.js';
+import { cargarPedidos, submitPedido, cancelEdit,
+         confirmarDelete, confirmarEstado } from './pedidos.js';
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener(
-'DOMContentLoaded',
-()=>{
-cargarPedidos();
-}
-);
+document.addEventListener('DOMContentLoaded', () => {
+  cargarPedidos();
+});
